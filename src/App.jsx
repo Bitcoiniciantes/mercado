@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { Check, ChevronDown, CircleHelp, Copy, LogIn, LogOut, Plus, Repeat2, ShoppingCart, Trash2, X } from 'lucide-react';
 import { auth, db, firebaseConfigured, googleProvider } from './firebase';
 
@@ -21,6 +21,7 @@ const SUGGESTIONS = [
   { id: 'geladeira', label: 'Geladeira e bebidas', emoji: '🥛', items: [['Frango', 'carnes'], ['Carne moída', 'carnes'], ['Queijo', 'frios'], ['Presunto', 'frios'], ['Manteiga', 'frios'], ['Iogurte', 'frios'], ['Suco', 'bebidas'], ['Água', 'bebidas']] },
 ];
 const localKey = 'lista-compras-local';
+const defaultList = { id: 'default', name: 'Minha lista', hidden: false };
 
 function categoryLabel(id) {
   const category = CATEGORIES.find((item) => item.id === id);
@@ -31,6 +32,8 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [items, setItems] = useState([]);
   const [templates, setTemplates] = useState([]);
+  const [lists, setLists] = useState([defaultList]);
+  const [activeListId, setActiveListId] = useState('default');
   const [name, setName] = useState('');
   const [category, setCategory] = useState('hortifruti');
   const [templateName, setTemplateName] = useState('');
@@ -40,6 +43,21 @@ export default function App() {
   const [selectedSuggestions, setSelectedSuggestions] = useState([]);
 
   useEffect(() => auth ? onAuthStateChanged(auth, setUser) : undefined, []);
+  useEffect(() => {
+    if (!user || !db) {
+      const saved = JSON.parse(localStorage.getItem(`${localKey}-lists`) || 'null');
+      const nextLists = saved?.length ? saved : [defaultList];
+      setLists(nextLists);
+      const savedActive = localStorage.getItem(`${localKey}-active-list`);
+      setActiveListId(savedActive && nextLists.some((list) => list.id === savedActive) ? savedActive : nextLists.find((list) => !list.hidden)?.id || null);
+      return undefined;
+    }
+    return onSnapshot(query(collection(db, 'users', user.uid, 'lists'), orderBy('createdAt', 'asc')), (snapshot) => {
+      const nextLists = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+      setLists(nextLists.length ? nextLists : [defaultList]);
+      setActiveListId((current) => current && nextLists.some((list) => list.id === current) ? current : nextLists.find((list) => !list.hidden)?.id || 'default');
+    });
+  }, [user]);
 
   useEffect(() => {
     if (!user || !db) {
@@ -62,20 +80,61 @@ export default function App() {
     });
   }, [user]);
 
-  const pending = items.filter((item) => !item.isChecked).length;
-  const grouped = useMemo(() => CATEGORIES.map((categoryItem) => ({ ...categoryItem, items: items.filter((item) => item.category === categoryItem.id) })).filter((group) => group.items.length), [items]);
+  const activeList = lists.find((list) => list.id === activeListId) || null;
+  const activeItems = items.filter((item) => (item.listId || 'default') === activeListId);
+  const pending = activeItems.filter((item) => !item.isChecked).length;
+  const grouped = useMemo(() => CATEGORIES.map((categoryItem) => ({ ...categoryItem, items: activeItems.filter((item) => item.category === categoryItem.id) })).filter((group) => group.items.length), [activeItems]);
 
   const persistLocalItems = (next) => { setItems(next); localStorage.setItem(localKey, JSON.stringify(next)); };
+  function selectList(listId) {
+    setActiveListId(listId || null);
+    localStorage.setItem(`${localKey}-active-list`, listId || '');
+    setSelectedSuggestions([]);
+  }
+
+  async function createList() {
+    const cleanName = window.prompt('Nome da nova lista:', 'Lista do mês')?.trim();
+    if (!cleanName) return;
+    if (user && db) {
+      const listRef = doc(collection(db, 'users', user.uid, 'lists'));
+      await setDoc(listRef, { name: cleanName, hidden: false, createdAt: serverTimestamp() });
+      setActiveListId(listRef.id);
+    } else {
+      const nextList = { id: crypto.randomUUID(), name: cleanName, hidden: false, createdAt: Date.now() };
+      const nextLists = [...lists, nextList];
+      setLists(nextLists);
+      localStorage.setItem(`${localKey}-lists`, JSON.stringify(nextLists));
+      selectList(nextList.id);
+    }
+    setStatus(`Lista “${cleanName}” criada.`);
+  }
+
+  async function hideActiveList() {
+    if (!activeListId || !activeList) return;
+    const nextLists = lists.map((list) => list.id === activeListId ? { ...list, hidden: true } : list);
+    if (user && db) {
+      if (activeListId === 'default') await setDoc(doc(db, 'users', user.uid, 'lists', 'default'), { name: activeList.name, hidden: true, createdAt: serverTimestamp() }, { merge: true });
+      else await updateDoc(doc(db, 'users', user.uid, 'lists', activeListId), { hidden: true });
+    } else {
+      setLists(nextLists);
+      localStorage.setItem(`${localKey}-lists`, JSON.stringify(nextLists));
+    }
+    const nextActive = nextLists.find((list) => !list.hidden)?.id || null;
+    setActiveListId(nextActive);
+    localStorage.setItem(`${localKey}-active-list`, nextActive || '');
+    setStatus(`Lista “${activeList.name}” ocultada. Você pode criar ou importar outra.`);
+  }
   function toggleSuggestion(suggestion) {
     setSelectedSuggestions((current) => current.includes(suggestion) ? current.filter((item) => item !== suggestion) : [...current, suggestion]);
   }
 
   async function addSelectedSuggestions() {
+    if (!activeListId) { setStatus('Crie ou selecione uma lista antes de adicionar itens.'); return; }
     const selected = SUGGESTIONS.flatMap((group) => group.items.map(([itemName, itemCategory]) => ({ name: itemName, category: itemCategory }))).filter((item) => selectedSuggestions.includes(item.name));
     const existing = new Set(items.map((item) => `${item.category}:${item.name.toLocaleLowerCase('pt-BR')}`));
     const toAdd = selected.filter((item) => !existing.has(`${item.category}:${item.name.toLocaleLowerCase('pt-BR')}`));
     if (!toAdd.length) { setStatus('Os itens selecionados já estão na lista.'); return; }
-    const payloads = toAdd.map((item) => ({ ...item, isChecked: false }));
+    const payloads = toAdd.map((item) => ({ ...item, listId: activeListId, isChecked: false }));
     if (user && db) {
       const batch = writeBatch(db);
       payloads.forEach((item) => batch.set(doc(collection(db, 'users', user.uid, 'items')), { ...item, createdAt: serverTimestamp() }));
@@ -87,9 +146,10 @@ export default function App() {
 
   async function addItem(event) {
     event.preventDefault();
+    if (!activeListId) { setStatus('Crie ou selecione uma lista antes de adicionar itens.'); return; }
     const cleanName = name.trim();
     if (!cleanName) return;
-    const payload = { name: cleanName, category, isChecked: false, createdAt: Date.now() };
+    const payload = { name: cleanName, category, listId: activeListId, isChecked: false, createdAt: Date.now() };
     if (user && db) await addDoc(collection(db, 'users', user.uid, 'items'), { ...payload, createdAt: serverTimestamp() });
     else persistLocalItems([{ ...payload, id: crypto.randomUUID() }, ...items]);
     setName('');
@@ -107,7 +167,7 @@ export default function App() {
 
   async function saveTemplate() {
     const cleanName = templateName.trim() || `Lista de ${new Date().toLocaleDateString('pt-BR')}`;
-    const entries = items.map(({ name: itemName, category: itemCategory }) => ({ name: itemName, category: itemCategory }));
+    const entries = activeItems.map(({ name: itemName, category: itemCategory }) => ({ name: itemName, category: itemCategory }));
     if (!entries.length) return setStatus('Adicione itens antes de salvar um modelo.');
     if (user && db) await addDoc(collection(db, 'users', user.uid, 'templates'), { name: cleanName, items: entries, createdAt: serverTimestamp() });
     else { const next = [{ id: crypto.randomUUID(), name: cleanName, items: entries }, ...templates]; setTemplates(next); localStorage.setItem(`${localKey}-templates`, JSON.stringify(next)); }
@@ -115,11 +175,12 @@ export default function App() {
   }
 
   async function importTemplate(template) {
+    if (!activeListId) { setStatus('Crie ou selecione uma lista antes de importar.'); return; }
     if (user && db) {
       const batch = writeBatch(db);
-      template.items.forEach((item) => batch.set(doc(collection(db, 'users', user.uid, 'items')), { ...item, isChecked: false, createdAt: serverTimestamp() }));
+      template.items.forEach((item) => batch.set(doc(collection(db, 'users', user.uid, 'items')), { ...item, listId: activeListId, isChecked: false, createdAt: serverTimestamp() }));
       await batch.commit();
-    } else persistLocalItems([...template.items.map((item) => ({ ...item, isChecked: false, id: crypto.randomUUID(), createdAt: Date.now() })), ...items]);
+    } else persistLocalItems([...template.items.map((item) => ({ ...item, listId: activeListId, isChecked: false, id: crypto.randomUUID(), createdAt: Date.now() })), ...items]);
     setStatus(`“${template.name}” importada para a compra ativa.`);
   }
 
@@ -133,7 +194,7 @@ export default function App() {
   return <main className="app-shell">
     <header className="topbar"><div className="brand"><div className="brand-mark"><ShoppingCart size={21} /></div><div><strong>Lista de Compras</strong><span>Organize. Compre. Simplifique.</span></div></div><div className="account">{user ? <><span className="user-name">{user.displayName || user.email}</span><button className="icon-button" onClick={logout} title="Sair"><LogOut size={17} /></button></> : <button className="login-button" onClick={login} disabled={loadingAuth}><LogIn size={16} /> Entrar com Google</button>}</div></header>
     {!firebaseConfigured && <div className="setup-notice"><CircleHelp size={17} /> Modo local ativo. Configure o arquivo `.env` para sincronizar listas por usuário.</div>}
-    <section className="hero"><div><p className="eyebrow">COMPRA ATIVA</p><h1>Minha lista</h1><p className="muted">{pending} {pending === 1 ? 'item pendente' : 'itens pendentes'}</p></div><div className="hero-actions"><button className="secondary-button" onClick={() => setShowTemplates((value) => !value)}><Repeat2 size={17} /> Modelos recorrentes <ChevronDown size={15} className={showTemplates ? 'rotate' : ''} /></button></div></section>
+    <section className="hero"><div><p className="eyebrow">COMPRA ATIVA</p><h1>{activeList?.name || 'Nenhuma lista ativa'}</h1><p className="muted">{pending} {pending === 1 ? 'item pendente' : 'itens pendentes'}</p></div><div className="hero-actions"><div className="list-controls"><select value={activeListId || ''} onChange={(event) => selectList(event.target.value)} aria-label="Selecionar lista"><option value="">Nenhuma lista ativa</option>{lists.map((list) => <option value={list.id} key={list.id}>{list.hidden ? 'Oculta · ' : ''}{list.name}</option>)}</select><button className="secondary-button small" onClick={createList}><Plus size={15} /> Nova lista</button>{activeList && <button className="secondary-button small" onClick={hideActiveList}>Ocultar</button>}</div><button className="secondary-button" onClick={() => setShowTemplates((value) => !value)}><Repeat2 size={17} /> Modelos recorrentes <ChevronDown size={15} className={showTemplates ? 'rotate' : ''} /></button></div></section>
     {status && <div className="status"><span>{status}</span><button onClick={() => setStatus('')}><X size={15} /></button></div>}
     {showTemplates && <section className="templates-panel"><div className="panel-heading"><div><p className="eyebrow">REUTILIZE SUA ROTINA</p><h2>Modelos recorrentes</h2></div><button className="icon-button" onClick={() => setShowTemplates(false)}><X size={17} /></button></div><div className="template-save"><input value={templateName} onChange={(event) => setTemplateName(event.target.value)} placeholder="Nome do modelo (ex.: Compra mensal)" /><button className="primary-button" onClick={saveTemplate}><Copy size={16} /> Salvar lista atual</button></div>{templates.length ? <div className="template-list">{templates.map((template) => <div className="template-card" key={template.id}><div><strong>{template.name}</strong><span>{template.items.length} {template.items.length === 1 ? 'item' : 'itens'}</span></div><button className="secondary-button small" onClick={() => importTemplate(template)}>Importar</button></div>)}</div> : <p className="empty-template">Nenhum modelo salvo.</p>}</section>}
     <section className="suggestions-panel"><div className="suggestions-heading"><div><p className="eyebrow">PARA FACILITAR</p><h2>O que você precisa hoje?</h2><p className="muted">Selecione os itens mais comuns e adicione de uma vez.</p></div><button className="primary-button" onClick={addSelectedSuggestions} disabled={!selectedSuggestions.length}><Plus size={17} /> Adicionar selecionados {selectedSuggestions.length ? `(${selectedSuggestions.length})` : ''}</button></div><div className="suggestion-groups">{SUGGESTIONS.map((group) => <div className="suggestion-group" key={group.id}><h3><span>{group.emoji}</span>{group.label}</h3><div className="suggestion-list">{group.items.map(([itemName]) => <button type="button" className={`suggestion-chip ${selectedSuggestions.includes(itemName) ? 'selected' : ''}`} key={itemName} onClick={() => toggleSuggestion(itemName)}>{selectedSuggestions.includes(itemName) ? <Check size={13} /> : <Plus size={13} />}{itemName}</button>)}</div></div>)}</div></section>    <section className="card"><form className="add-form" onSubmit={addItem}><input value={name} onChange={(event) => setName(event.target.value)} placeholder="O que você precisa comprar?" aria-label="Nome do item" /><select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Categoria">{CATEGORIES.map((item) => <option value={item.id} key={item.id}>{item.emoji} {item.label}</option>)}</select><button className="primary-button" type="submit"><Plus size={18} /> Adicionar item</button></form>{grouped.length ? <div className="groups">{grouped.map((group) => <section key={group.id}><h2><span>{group.emoji}</span>{group.label}<small>{group.items.length}</small></h2><ul>{group.items.map((item) => <li key={item.id} className={item.isChecked ? 'checked' : ''}><button className="check" onClick={() => toggleItem(item)} aria-label={`Marcar ${item.name}`}><Check size={14} /></button><span>{item.name}</span><button className="delete" onClick={() => removeItem(item)} aria-label={`Excluir ${item.name}`}><Trash2 size={16} /></button></li>)}</ul></section>)}</div> : <div className="empty"><ShoppingCart size={34} /><h2>Sua lista está vazia</h2><p>Adicione seu primeiro item para começar.</p></div>}</section>
