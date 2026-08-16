@@ -26,6 +26,8 @@ const defaultList = { id: 'default', name: 'Minha lista', hidden: false };
 function categoryLabel(id) {
   const category = CATEGORIES.find((item) => item.id === id);
   return category ? `${category.emoji} ${category.label}` : '📦 Outros';
+}function normalizeItemName(value) {
+  return value.trim().toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 export default function App() {
@@ -125,7 +127,7 @@ export default function App() {
   }
   async function addSuggestion(itemName, itemCategory) {
     if (!activeListId) { setStatus('Crie ou selecione uma lista antes de adicionar itens.'); return; }
-    const alreadyAdded = activeItems.some((item) => item.name.toLocaleLowerCase('pt-BR') === itemName.toLocaleLowerCase('pt-BR'));
+    const alreadyAdded = activeItems.some((item) => normalizeItemName(item.name) === normalizeItemName(itemName));
     if (alreadyAdded) return;
     const payload = { name: itemName, category: itemCategory, listId: activeListId, isChecked: false };
     if (user && db) await addDoc(collection(db, 'users', user.uid, 'items'), { ...payload, createdAt: serverTimestamp() });
@@ -138,6 +140,7 @@ export default function App() {
     if (!activeListId) { setStatus('Crie ou selecione uma lista antes de adicionar itens.'); return; }
     const cleanName = name.trim();
     if (!cleanName) return;
+    if (activeItems.some((item) => normalizeItemName(item.name) === normalizeItemName(cleanName))) { setStatus(`${cleanName} já está na lista.`); return; }
     const payload = { name: cleanName, category, listId: activeListId, isChecked: false, createdAt: Date.now() };
     if (user && db) await addDoc(collection(db, 'users', user.uid, 'items'), { ...payload, createdAt: serverTimestamp() });
     else persistLocalItems([{ ...payload, id: crypto.randomUUID() }, ...items]);
@@ -165,12 +168,20 @@ export default function App() {
 
   async function importTemplate(template) {
     if (!activeListId) { setStatus('Crie ou selecione uma lista antes de importar.'); return; }
+    const existingNames = new Set(activeItems.map((item) => normalizeItemName(item.name)));
+    const uniqueItems = template.items.filter((item) => {
+      const normalized = normalizeItemName(item.name);
+      if (existingNames.has(normalized)) return false;
+      existingNames.add(normalized);
+      return true;
+    });
+    if (!uniqueItems.length) { setStatus('Todos os itens dessa lista recorrente já estão na lista ativa.'); return; }
     if (user && db) {
       const batch = writeBatch(db);
-      template.items.forEach((item) => batch.set(doc(collection(db, 'users', user.uid, 'items')), { ...item, listId: activeListId, isChecked: false, createdAt: serverTimestamp() }));
+      uniqueItems.forEach((item) => batch.set(doc(collection(db, 'users', user.uid, 'items')), { ...item, listId: activeListId, isChecked: false, createdAt: serverTimestamp() }));
       await batch.commit();
-    } else persistLocalItems([...template.items.map((item) => ({ ...item, listId: activeListId, isChecked: false, id: crypto.randomUUID(), createdAt: Date.now() })), ...items]);
-    setStatus(`“${template.name}” importada para a compra ativa.`);
+    } else persistLocalItems([...uniqueItems.map((item) => ({ ...item, listId: activeListId, isChecked: false, id: crypto.randomUUID(), createdAt: Date.now() })), ...items]);
+    setStatus(`${uniqueItems.length} ${uniqueItems.length === 1 ? 'item importado' : 'itens importados'} sem duplicação.`);
   }
 
   async function login() {
