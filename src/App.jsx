@@ -14,6 +14,12 @@ const CATEGORIES = [
   { id: 'outros', label: 'Outros', emoji: '📦' },
 ];
 
+const SUGGESTIONS = [
+  { id: 'basicos', label: 'Básicos da casa', emoji: '🧺', items: [['Arroz', 'mercearia'], ['Feijão', 'mercearia'], ['Macarrão', 'mercearia'], ['Óleo', 'mercearia'], ['Açúcar', 'mercearia'], ['Café', 'mercearia'], ['Leite', 'frios'], ['Ovos', 'frios'], ['Pão', 'frios']] },
+  { id: 'feira', label: 'Feira e hortifruti', emoji: '🍎', items: [['Banana', 'hortifruti'], ['Maçã', 'hortifruti'], ['Tomate', 'hortifruti'], ['Batata', 'hortifruti'], ['Cebola', 'hortifruti'], ['Alface', 'hortifruti'], ['Alho', 'hortifruti'], ['Limão', 'hortifruti']] },
+  { id: 'limpeza', label: 'Limpeza e cuidados', emoji: '🧼', items: [['Detergente', 'limpeza'], ['Sabão em pó', 'limpeza'], ['Amaciante', 'limpeza'], ['Desinfetante', 'limpeza'], ['Papel higiênico', 'limpeza'], ['Papel-toalha', 'limpeza'], ['Sacos de lixo', 'limpeza']] },
+  { id: 'geladeira', label: 'Geladeira e bebidas', emoji: '🥛', items: [['Frango', 'carnes'], ['Carne moída', 'carnes'], ['Queijo', 'frios'], ['Presunto', 'frios'], ['Manteiga', 'frios'], ['Iogurte', 'frios'], ['Suco', 'bebidas'], ['Água', 'bebidas']] },
+];
 const localKey = 'lista-compras-local';
 
 function categoryLabel(id) {
@@ -31,6 +37,7 @@ export default function App() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [status, setStatus] = useState('');
   const [loadingAuth, setLoadingAuth] = useState(false);
+  const [selectedSuggestions, setSelectedSuggestions] = useState([]);
 
   useEffect(() => auth ? onAuthStateChanged(auth, setUser) : undefined, []);
 
@@ -59,6 +66,24 @@ export default function App() {
   const grouped = useMemo(() => CATEGORIES.map((categoryItem) => ({ ...categoryItem, items: items.filter((item) => item.category === categoryItem.id) })).filter((group) => group.items.length), [items]);
 
   const persistLocalItems = (next) => { setItems(next); localStorage.setItem(localKey, JSON.stringify(next)); };
+  function toggleSuggestion(suggestion) {
+    setSelectedSuggestions((current) => current.includes(suggestion) ? current.filter((item) => item !== suggestion) : [...current, suggestion]);
+  }
+
+  async function addSelectedSuggestions() {
+    const selected = SUGGESTIONS.flatMap((group) => group.items.map(([itemName, itemCategory]) => ({ name: itemName, category: itemCategory }))).filter((item) => selectedSuggestions.includes(item.name));
+    const existing = new Set(items.map((item) => `${item.category}:${item.name.toLocaleLowerCase('pt-BR')}`));
+    const toAdd = selected.filter((item) => !existing.has(`${item.category}:${item.name.toLocaleLowerCase('pt-BR')}`));
+    if (!toAdd.length) { setStatus('Os itens selecionados já estão na lista.'); return; }
+    const payloads = toAdd.map((item) => ({ ...item, isChecked: false }));
+    if (user && db) {
+      const batch = writeBatch(db);
+      payloads.forEach((item) => batch.set(doc(collection(db, 'users', user.uid, 'items')), { ...item, createdAt: serverTimestamp() }));
+      await batch.commit();
+    } else persistLocalItems([...payloads.map((item) => ({ ...item, id: crypto.randomUUID(), createdAt: Date.now() })), ...items]);
+    setSelectedSuggestions([]);
+    setStatus(`${toAdd.length} ${toAdd.length === 1 ? 'item adicionado' : 'itens adicionados'} à lista.`);
+  }
 
   async function addItem(event) {
     event.preventDefault();
@@ -111,7 +136,7 @@ export default function App() {
     <section className="hero"><div><p className="eyebrow">COMPRA ATIVA</p><h1>Minha lista</h1><p className="muted">{pending} {pending === 1 ? 'item pendente' : 'itens pendentes'}</p></div><div className="hero-actions"><button className="secondary-button" onClick={() => setShowTemplates((value) => !value)}><Repeat2 size={17} /> Modelos recorrentes <ChevronDown size={15} className={showTemplates ? 'rotate' : ''} /></button></div></section>
     {status && <div className="status"><span>{status}</span><button onClick={() => setStatus('')}><X size={15} /></button></div>}
     {showTemplates && <section className="templates-panel"><div className="panel-heading"><div><p className="eyebrow">REUTILIZE SUA ROTINA</p><h2>Modelos recorrentes</h2></div><button className="icon-button" onClick={() => setShowTemplates(false)}><X size={17} /></button></div><div className="template-save"><input value={templateName} onChange={(event) => setTemplateName(event.target.value)} placeholder="Nome do modelo (ex.: Compra mensal)" /><button className="primary-button" onClick={saveTemplate}><Copy size={16} /> Salvar lista atual</button></div>{templates.length ? <div className="template-list">{templates.map((template) => <div className="template-card" key={template.id}><div><strong>{template.name}</strong><span>{template.items.length} {template.items.length === 1 ? 'item' : 'itens'}</span></div><button className="secondary-button small" onClick={() => importTemplate(template)}>Importar</button></div>)}</div> : <p className="empty-template">Nenhum modelo salvo.</p>}</section>}
-    <section className="card"><form className="add-form" onSubmit={addItem}><input value={name} onChange={(event) => setName(event.target.value)} placeholder="O que você precisa comprar?" aria-label="Nome do item" /><select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Categoria">{CATEGORIES.map((item) => <option value={item.id} key={item.id}>{item.emoji} {item.label}</option>)}</select><button className="primary-button" type="submit"><Plus size={18} /> Adicionar item</button></form>{grouped.length ? <div className="groups">{grouped.map((group) => <section key={group.id}><h2><span>{group.emoji}</span>{group.label}<small>{group.items.length}</small></h2><ul>{group.items.map((item) => <li key={item.id} className={item.isChecked ? 'checked' : ''}><button className="check" onClick={() => toggleItem(item)} aria-label={`Marcar ${item.name}`}><Check size={14} /></button><span>{item.name}</span><button className="delete" onClick={() => removeItem(item)} aria-label={`Excluir ${item.name}`}><Trash2 size={16} /></button></li>)}</ul></section>)}</div> : <div className="empty"><ShoppingCart size={34} /><h2>Sua lista está vazia</h2><p>Adicione seu primeiro item para começar.</p></div>}</section>
+    <section className="suggestions-panel"><div className="suggestions-heading"><div><p className="eyebrow">PARA FACILITAR</p><h2>O que você precisa hoje?</h2><p className="muted">Selecione os itens mais comuns e adicione de uma vez.</p></div><button className="primary-button" onClick={addSelectedSuggestions} disabled={!selectedSuggestions.length}><Plus size={17} /> Adicionar selecionados {selectedSuggestions.length ? `(${selectedSuggestions.length})` : ''}</button></div><div className="suggestion-groups">{SUGGESTIONS.map((group) => <div className="suggestion-group" key={group.id}><h3><span>{group.emoji}</span>{group.label}</h3><div className="suggestion-list">{group.items.map(([itemName]) => <button type="button" className={`suggestion-chip ${selectedSuggestions.includes(itemName) ? 'selected' : ''}`} key={itemName} onClick={() => toggleSuggestion(itemName)}>{selectedSuggestions.includes(itemName) ? <Check size={13} /> : <Plus size={13} />}{itemName}</button>)}</div></div>)}</div></section>    <section className="card"><form className="add-form" onSubmit={addItem}><input value={name} onChange={(event) => setName(event.target.value)} placeholder="O que você precisa comprar?" aria-label="Nome do item" /><select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Categoria">{CATEGORIES.map((item) => <option value={item.id} key={item.id}>{item.emoji} {item.label}</option>)}</select><button className="primary-button" type="submit"><Plus size={18} /> Adicionar item</button></form>{grouped.length ? <div className="groups">{grouped.map((group) => <section key={group.id}><h2><span>{group.emoji}</span>{group.label}<small>{group.items.length}</small></h2><ul>{group.items.map((item) => <li key={item.id} className={item.isChecked ? 'checked' : ''}><button className="check" onClick={() => toggleItem(item)} aria-label={`Marcar ${item.name}`}><Check size={14} /></button><span>{item.name}</span><button className="delete" onClick={() => removeItem(item)} aria-label={`Excluir ${item.name}`}><Trash2 size={16} /></button></li>)}</ul></section>)}</div> : <div className="empty"><ShoppingCart size={34} /><h2>Sua lista está vazia</h2><p>Adicione seu primeiro item para começar.</p></div>}</section>
     <footer>Seus itens ficam isolados por conta quando o login está ativo.</footer>
   </main>;
 }
