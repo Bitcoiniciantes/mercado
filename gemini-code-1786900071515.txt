@@ -1,0 +1,4 @@
+src/
+├── firebase.js          # Configuração e inicialização do Firebase
+├── App.jsx              # Componente principal com gerenciamento de estado e CRUD
+└── main.jsx             # Ponto de entrada do React
