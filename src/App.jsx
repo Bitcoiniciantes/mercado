@@ -171,8 +171,11 @@ export default function App() {
   }
 
   async function importTemplate(template) {
-    if (!activeListId) { setStatus('Crie ou selecione uma lista antes de importar.'); return; }
-    const existingNames = new Set(activeItems.map((item) => normalizeItemName(item.name)));
+    const targetListId = activeListId || lists.find((list) => !list.hidden)?.id || null;
+    if (!targetListId) { setStatus('Crie uma lista de compras antes de importar.'); return; }
+    if (!activeListId) { setActiveListId(targetListId); localStorage.setItem(`${localKey}-active-list`, targetListId); }
+    const targetItems = items.filter((item) => (item.listId || 'default') === targetListId);
+    const existingNames = new Set(targetItems.map((item) => normalizeItemName(item.name)));
     const uniqueItems = template.items.filter((item) => {
       const normalized = normalizeItemName(item.name);
       if (existingNames.has(normalized)) return false;
@@ -182,9 +185,9 @@ export default function App() {
     if (!uniqueItems.length) { setStatus('Todos os itens dessa lista recorrente já estão na lista ativa.'); return; }
     if (user && db) {
       const batch = writeBatch(db);
-      uniqueItems.forEach((item) => batch.set(doc(collection(db, 'users', user.uid, 'items')), { ...item, listId: activeListId, isChecked: false, createdAt: serverTimestamp() }));
+      uniqueItems.forEach((item) => batch.set(doc(collection(db, 'users', user.uid, 'items')), { ...item, listId: targetListId, isChecked: false, createdAt: serverTimestamp() }));
       await batch.commit();
-    } else persistLocalItems([...uniqueItems.map((item) => ({ ...item, listId: activeListId, isChecked: false, id: crypto.randomUUID(), createdAt: Date.now() })), ...items]);
+    } else persistLocalItems([...uniqueItems.map((item) => ({ ...item, listId: targetListId, isChecked: false, id: crypto.randomUUID(), createdAt: Date.now() })), ...items]);
     setStatus(`${uniqueItems.length} ${uniqueItems.length === 1 ? 'item importado' : 'itens importados'} sem duplicação.`);
   }
 
@@ -205,5 +208,7 @@ export default function App() {
     <footer><span>Seus itens ficam isolados por conta quando o login está ativo.</span><small>Copyright <b>{visitCount || "—"}</b></small></footer>
   </main>;
 }
+
+
 
 
