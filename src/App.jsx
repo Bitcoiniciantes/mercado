@@ -175,22 +175,28 @@ export default function App() {
     if (!targetListId) { setStatus('Crie uma lista de compras antes de importar.'); return; }
     if (!activeListId) { setActiveListId(targetListId); localStorage.setItem(`${localKey}-active-list`, targetListId); }
     const targetItems = items.filter((item) => (item.listId || 'default') === targetListId);
-    const existingNames = new Set(targetItems.map((item) => normalizeItemName(item.name)));
+    const templateNames = new Set(template.items.map((item) => normalizeItemName(item.name)));
+    const checkedMatches = targetItems.filter((item) => item.isChecked && templateNames.has(normalizeItemName(item.name)));
+    const existingNames = new Set(targetItems.filter((item) => !item.isChecked).map((item) => normalizeItemName(item.name)));
     const uniqueItems = template.items.filter((item) => {
       const normalized = normalizeItemName(item.name);
       if (existingNames.has(normalized)) return false;
       existingNames.add(normalized);
-      return true;
+      return !targetItems.some((entry) => !entry.isChecked && normalizeItemName(entry.name) === normalized);
     });
-    if (!uniqueItems.length) { setStatus('Todos os itens dessa lista recorrente já estão na lista ativa.'); return; }
     if (user && db) {
       const batch = writeBatch(db);
+      checkedMatches.forEach((item) => batch.update(doc(db, 'users', user.uid, 'items', item.id), { isChecked: false }));
       uniqueItems.forEach((item) => batch.set(doc(collection(db, 'users', user.uid, 'items')), { ...item, listId: targetListId, isChecked: false, createdAt: serverTimestamp() }));
-      await batch.commit();
-    } else persistLocalItems([...uniqueItems.map((item) => ({ ...item, listId: targetListId, isChecked: false, id: crypto.randomUUID(), createdAt: Date.now() })), ...items]);
-    setStatus(`${uniqueItems.length} ${uniqueItems.length === 1 ? 'item importado' : 'itens importados'} sem duplicação.`);
+      if (checkedMatches.length || uniqueItems.length) await batch.commit();
+    } else {
+      const resetIds = new Set(checkedMatches.map((item) => item.id));
+      persistLocalItems([...uniqueItems.map((item) => ({ ...item, listId: targetListId, isChecked: false, id: crypto.randomUUID(), createdAt: Date.now() })), ...items.map((item) => resetIds.has(item.id) ? { ...item, isChecked: false } : item)]);
+    }
+    if (!checkedMatches.length && !uniqueItems.length) { setStatus('Todos os itens dessa lista já estão pendentes.'); return; }
+    const total = checkedMatches.length + uniqueItems.length;
+    setStatus(`${total} ${total === 1 ? 'item preparado' : 'itens preparados'} para a nova compra, sem marcações.`);
   }
-
   async function login() {
     if (!auth) return setStatus('Configure as variáveis do Firebase para ativar o login.');
     setLoadingAuth(true); try { await signInWithPopup(auth, googleProvider); } finally { setLoadingAuth(false); }
@@ -208,6 +214,7 @@ export default function App() {
     <footer><span>Seus itens ficam isolados por conta quando o login está ativo.</span><small>Copyright <b>{visitCount || "—"}</b></small></footer>
   </main>;
 }
+
 
 
 
