@@ -43,7 +43,18 @@ export default function App() {
 
   useEffect(() => auth ? onAuthStateChanged(auth, setUser) : undefined, []);
   useEffect(() => {
-    fetch('https://listadecompras.goatcounter.com/counter/TOTAL.json').then((response) => response.ok ? response.json() : null).then((data) => { if (data?.count) setVisitCount(data.count); }).catch(() => {});
+    const WORKER_URL = 'https://floral-truth-af64.bitcoiniciantes.workers.dev';
+    const SITE_NAME = 'mercado';
+    const today = new Date().toISOString().slice(0, 10);
+    const lastVisit = localStorage.getItem('btc_last_visit_' + SITE_NAME);
+    if (lastVisit === today) {
+      fetch(WORKER_URL + '/total?site=' + SITE_NAME).then(r => r.json()).then(data => { if (data.count !== undefined) setVisitCount(data.count); }).catch(() => {});
+    } else {
+      localStorage.setItem('btc_last_visit_' + SITE_NAME, today);
+      fetch(WORKER_URL + '/count?site=' + SITE_NAME).then(r => r.json()).then(data => { if (data.count !== undefined) setVisitCount(data.count); }).catch(() => {
+        fetch(WORKER_URL + '/total?site=' + SITE_NAME).then(r => r.json()).then(data => { if (data.count !== undefined) setVisitCount(data.count); }).catch(() => {});
+      });
+    }
   }, []);
   useEffect(() => {
     if (!user || !db) {
