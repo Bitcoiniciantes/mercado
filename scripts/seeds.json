@@ -1,0 +1,66 @@
+{
+  "azeite-500ml": {
+    "display": "Azeite 500ml",
+    "eanRef": "7891080141542",
+    "faixa": {
+      "max": 42.9,
+      "min": 29.9
+    },
+    "obs": 22,
+    "pack": {
+      "qty": 500,
+      "unit": "ml"
+    },
+    "priceBase": 69.8,
+    "stale": false,
+    "unitBase": "L"
+  },
+  "carne-moida-kg": {
+    "display": "Carne moída 1kg",
+    "eanRef": null,
+    "faixa": {
+      "max": 42.9,
+      "min": 29.9
+    },
+    "obs": 12,
+    "pack": {
+      "qty": 1,
+      "unit": "kg"
+    },
+    "priceBase": 36.9,
+    "stale": false,
+    "unitBase": "kg"
+  },
+  "feijao-preto-1kg": {
+    "display": "Feijão preto 1kg",
+    "eanRef": "7896089010167",
+    "faixa": {
+      "max": 9.49,
+      "min": 6.29
+    },
+    "obs": 40,
+    "pack": {
+      "qty": 1,
+      "unit": "kg"
+    },
+    "priceBase": 7.49,
+    "stale": false,
+    "unitBase": "kg"
+  },
+  "manteiga-500g": {
+    "display": "Manteiga 500g",
+    "eanRef": null,
+    "faixa": {
+      "max": 32.9,
+      "min": 24.9
+    },
+    "obs": 15,
+    "pack": {
+      "qty": 500,
+      "unit": "g"
+    },
+    "priceBase": 57.8,
+    "stale": false,
+    "unitBase": "kg"
+  }
+}

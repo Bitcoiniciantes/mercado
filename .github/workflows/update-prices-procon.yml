@@ -1,0 +1,38 @@
+name: Update prices via Procon-SP (mensal)
+
+on:
+  schedule:
+    # Dia 18, 11h UTC = 8h BRT. Boletins saem ~dia 15; script tolera atraso.
+    - cron: "0 11 18 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: pip install pypdf
+      - name: Update prices from Procon-SP bulletin
+        # Falha visivel se exit 1/2 (sem boletim+sem arquivo, ou layout mudou).
+        # Exit 0 cobre ok e stale (falha de rede pontual / produto ausente).
+        run: python scripts/update_prices_procon.py
+      - name: Check changes
+        id: diff
+        run: |
+          git add -N public/prices.json
+          git diff --quiet public/prices.json && echo "changed=false" >> $GITHUB_OUTPUT || echo "changed=true" >> $GITHUB_OUTPUT
+      - name: Commit prices.json
+        if: steps.diff.outputs.changed == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: atualiza precos via Cesta Basica Procon-SP"
+          file_pattern: public/prices.json
