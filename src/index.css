@@ -19,7 +19,7 @@
 .groups li{flex-wrap:wrap}.groups li .item-name{flex:1 1 auto;min-width:0}
 .price-chip{border:1px solid #cfe0d2;background:#eef6ef;color:#315344;border-radius:14px;padding:5px 10px;font:700 12px inherit;cursor:pointer;white-space:nowrap;margin-left:auto;flex:0 0 auto}.price-manual{background:#1f684d;border-color:#1f684d;color:#fff}.price-book{background:#fff;border-color:#1f684d;color:#1f684d}.price-none{border-style:dashed;color:#a2ada5;background:transparent}.price-edit{display:inline-flex;gap:5px;align-items:center;margin-left:auto;flex:0 0 auto}.price-edit input{width:90px;border:1px solid #dce5de;border-radius:8px;padding:7px 9px;font:600 13px inherit}
 .groups li .delete{margin-left:6px}
-.totals-bottom{position:sticky;bottom:12px;display:flex;align-items:center;gap:14px;background:#10241c;color:#eaf5ee;border-radius:14px;padding:14px 18px;margin-top:16px;box-shadow:0 10px 30px #10241c33;flex-wrap:wrap}.totals-bottom span{display:block;font-size:10px;letter-spacing:1.2px;font-weight:700;color:#8fd0ae}.totals-bottom strong{font-size:20px}.totals-bottom small{display:block;font-size:11px;color:#b9cdc0}.totals-bottom .primary-button{margin-left:auto}.totals-bottom .primary-button:disabled{opacity:.5;cursor:not-allowed}
+.totals-bottom{position:sticky;bottom:12px;display:flex;align-items:center;gap:20px;background:#10241c;color:#eaf5ee;border-radius:14px;padding:14px 22px;margin-top:16px;box-shadow:0 10px 30px #10241c33;flex-wrap:wrap}.totals-bottom span{display:block;font-size:10px;letter-spacing:1.2px;font-weight:700;color:#8fd0ae}.totals-bottom strong{font-size:20px}.totals-bottom small{display:block;font-size:11px;color:#b9cdc0}.totals-bottom .primary-button{margin-left:auto}.totals-bottom .primary-button:disabled{opacity:.5;cursor:not-allowed}.totals-bottom>div{padding-left:14px}
 .caixa-input{width:130px;border:1px solid #2c4a3d;border-radius:8px;padding:8px 10px;font:700 15px inherit;color:#eaf5ee;background:#1a3329;outline:none}.caixa-input::placeholder{color:#7ba08d;font-weight:500}
 .attention-button{background:#fbe4e1!important;border-color:#eeb3ac!important;color:#a83a2e!important}
 .totals-top .primary-button{align-self:center}
@@ -37,6 +37,8 @@
 @keyframes quickNeon{0%,100%{box-shadow:0 0 16px rgba(74,222,128,1),0 0 38px rgba(74,222,128,.65);filter:brightness(1.08)}50%{box-shadow:0 0 3px rgba(74,222,128,.25),0 0 8px rgba(45,137,102,.2);filter:brightness(.85)}}
 @media(prefers-reduced-motion:reduce){.quick-main-toggle{animation:none}}
 .quick-hint{margin:12px 0 0}
+.quick-warning{margin:12px 0 0;background:#fff9e6;border:1px solid #f0dfa8;color:#6c5c36;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:600}
+.no-list-notice{margin:10px 0 0;background:#fff9e6;border:1px solid #f0dfa8;color:#6c5c36;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:600}
 .totals-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
 .totals-actions .primary-button{margin-left:0}
 .totals-actions .secondary-button{white-space:nowrap}
