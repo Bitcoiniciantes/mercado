@@ -42,4 +42,4 @@
 .totals-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
 .totals-actions .primary-button{margin-left:0}
 .totals-actions .secondary-button{white-space:nowrap}
-@media(max-width:700px){.suggestions-panel{padding:14px}.totals-bottom{gap:10px}.totals-actions{flex:1 1 100%;margin-left:0}.totals-actions .primary-button{flex:1 1 auto;width:auto;justify-content:center;margin-left:0}}
+@media(max-width:700px){.suggestions-panel{padding:14px}.totals-bottom{gap:10px}.totals-actions{flex:1 1 100%;margin-left:0}.totals-actions .primary-button{flex:1 1 auto;width:auto;justify-content:center;margin-left:0}.add-form input,.add-form select,.total-box input,.caixa-input,.price-edit input,.modal-card input,.template-save input,.list-controls select{font-size:16px}}
