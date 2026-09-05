@@ -15,7 +15,7 @@
 .duplicate-notice{grid-column:1/-1;margin:2px 0 -13px;color:#a34d35;font-size:12px;font-weight:600}
 
 .danger-button{color:#9c493f;border-color:#efd3cf}.danger-button:hover{background:#fff4f2;border-color:#dc9d94}
-.totals-top{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}.total-box{background:#fff;border:1px solid #e1e9e2;border-radius:12px;padding:12px 14px;flex:1 1 0;min-width:0;max-width:360px}.total-box span{display:block;font-size:10px;letter-spacing:1.2px;font-weight:700;color:#2d8966}.total-box strong{display:block;font-size:22px;color:#14362b;margin:4px 0}.total-box small{font-size:11px;color:#829087}.total-box input{margin-top:6px;width:100%;border:1px solid #dce5de;border-radius:8px;padding:9px 11px;font:600 14px inherit;color:#14362b;background:#fbfcfa}.diff-up{color:#a34d35;font-weight:700}.diff-ok{color:#2d8966;font-weight:700}
+.totals-top{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}.total-box{background:#10241c;border:1px solid #2c4a3d;border-radius:12px;padding:12px 14px;flex:1 1 0;min-width:0;max-width:360px}.total-box span{display:block;font-size:10px;letter-spacing:1.2px;font-weight:700;color:#8fd0ae}.total-box strong{display:block;font-size:22px;color:#eaf5ee;margin:4px 0}.total-box small{font-size:11px;color:#b9cdc0}.total-box input{margin-top:6px;width:100%;border:1px solid #2c4a3d;border-radius:8px;padding:9px 11px;font:600 14px inherit;color:#eaf5ee;background:#1a3329;outline:none}.total-box input::placeholder{color:#7ba08d;font-weight:500}.diff-up{color:#a34d35;font-weight:700}.diff-ok{color:#2d8966;font-weight:700}
 .groups li{flex-wrap:wrap}.groups li .item-name{flex:1 1 auto;min-width:0}
 .price-chip{border:1px solid #cfe0d2;background:#eef6ef;color:#315344;border-radius:14px;padding:5px 10px;font:700 12px inherit;cursor:pointer;white-space:nowrap;margin-left:auto;flex:0 0 auto}.price-manual{background:#1f684d;border-color:#1f684d;color:#fff}.price-book{background:#fff;border-color:#1f684d;color:#1f684d}.price-none{border-style:dashed;color:#a2ada5;background:transparent}.price-edit{display:inline-flex;gap:5px;align-items:center;margin-left:auto;flex:0 0 auto}.price-edit input{width:90px;border:1px solid #dce5de;border-radius:8px;padding:7px 9px;font:600 13px inherit}
 .groups li .delete{margin-left:6px}
@@ -30,9 +30,12 @@
 .market-tag{display:inline-block;font-size:10px;font-weight:700;color:#1e684d;background:#dcefe3;border-radius:10px;padding:2px 8px;margin-left:7px;vertical-align:middle}
 @media(max-width:700px){.dash-cards{grid-template-columns:1fr}.bar-label{min-width:64px}}
 @media(max-width:700px){.totals-top{flex-direction:column}.total-box{min-width:0}.totals-bottom{bottom:8px}}
-.quick-main-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;border:0;border-radius:11px;background:#1f684d;color:#fff;padding:14px 16px;font:700 15px 'DM Sans',sans-serif;cursor:pointer;margin-top:10px}
+.quick-main-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #4ade80;border-radius:11px;background:#1f684d;color:#fff;padding:14px 16px;font:700 15px 'DM Sans',sans-serif;cursor:pointer;margin-top:10px;box-shadow:0 0 16px rgba(74,222,128,1),0 0 38px rgba(74,222,128,.65),inset 0 0 8px rgba(255,255,255,.08);animation:quickNeon 1.3s ease-in-out infinite}
+.quick-main-toggle[aria-expanded="true"]{animation:none;box-shadow:0 0 8px rgba(74,222,128,.4)}
 .quick-main-toggle span{display:inline-flex;align-items:center;gap:8px}
-.quick-main-toggle:hover{background:#17573f}
+.quick-main-toggle:hover{background:#17573f;box-shadow:0 0 16px rgba(74,222,128,1),0 0 38px rgba(74,222,128,.6)}
+@keyframes quickNeon{0%,100%{box-shadow:0 0 16px rgba(74,222,128,1),0 0 38px rgba(74,222,128,.65);filter:brightness(1.08)}50%{box-shadow:0 0 3px rgba(74,222,128,.25),0 0 8px rgba(45,137,102,.2);filter:brightness(.85)}}
+@media(prefers-reduced-motion:reduce){.quick-main-toggle{animation:none}}
 .quick-hint{margin:12px 0 0}
 .totals-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
 .totals-actions .primary-button{margin-left:0}
