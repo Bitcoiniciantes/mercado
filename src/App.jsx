@@ -488,7 +488,12 @@ export default function App() {
       setShowShare(true);
       setStatus(`Link do “${activeList.name}” criado. Envie no WhatsApp.`);
     } catch (e) {
-      setStatus(`Não foi possível compartilhar: ${e?.message || e}`);
+      const code = e?.code || '';
+      if (code === 'permission-denied' || String(e?.message || '').includes('insufficient permissions')) {
+        setStatus('Sem permissão: publique as regras de compartilhamento em Firestore Database > Regras > Publicar e tente de novo.');
+      } else {
+        setStatus(`Não foi possível compartilhar: ${e?.message || e}`);
+      }
     } finally { setSharing(false); }
   }
 
@@ -673,8 +678,12 @@ export default function App() {
 
   async function logout() { if (auth) await signOut(auth); }
 
+  // Anônimo é só chave técnica da lista compartilhada: mostra como deslogado.
+  const isAnon = !!user?.isAnonymous;
+  const showAccount = user && !isAnon;
+
   return <main className="app-shell">
-    <header className="topbar"><div className="brand"><div className="brand-mark"><ShoppingCart size={21} /></div><div><strong>Lista de Compras</strong><span>Organize. Compre. Simplifique.</span></div></div><div className="account">{user ? <><span className="avatar">{(user.displayName || 'C').charAt(0).toUpperCase()}</span><span className="user-name">Olá, {(user.displayName || 'Conta').split(' ')[0]}</span><button className="icon-button" onClick={logout} title="Sair"><LogOut size={17} /></button></> : <button className="login-button" onClick={login} disabled={loadingAuth}><LogIn size={16} /> Entrar com Google</button>}</div></header>
+    <header className="topbar"><div className="brand"><div className="brand-mark"><ShoppingCart size={21} /></div><div><strong>Lista de Compras</strong><span>Organize. Compre. Simplifique.</span></div></div><div className="account">{showAccount ? <><span className="avatar">{(user.displayName || 'C').charAt(0).toUpperCase()}</span><span className="user-name">Olá, {(user.displayName || 'Conta').split(' ')[0]}</span><button className="icon-button" onClick={logout} title="Sair"><LogOut size={17} /></button></> : <button className="login-button" onClick={login} disabled={loadingAuth}><LogIn size={16} /> Entrar com Google</button>}</div></header>
     {!firebaseConfigured && <div className="setup-notice"><CircleHelp size={17} /> Modo local ativo. Configure o arquivo `.env` para sincronizar listas por usuário.</div>}
     <section className="hero"><div><p className="eyebrow">{isShared ? "CHURRASCO · LISTA COMPARTILHADA" : "COMPRA ATIVA"}</p><h1>{displayList?.name || 'Nenhuma lista ativa'}</h1><p className="muted">{pending} {pending === 1 ? 'item pendente' : 'itens pendentes'} · preços Procon-SP de {String(priceUpdatedAt(priceTable)).split('-').reverse().join('/')}. </p><div className="hero-actions"><div className="list-controls"><select value={activeListId || ''} onChange={(event) => selectList(event.target.value)} aria-label="Selecionar lista"><option value="">Nenhuma lista ativa</option>{lists.map((list) => <option value={list.id} key={list.id}>{list.hidden ? 'Oculta · ' : ''}{list.name}</option>)}</select><button className="secondary-button small attention-button" onClick={createList}><Plus size={15} /> Nova lista</button>{activeList && !isShared && <><button className="secondary-button small" onClick={hideActiveList}>Ocultar</button><button className="secondary-button small danger-button" onClick={deleteActiveList}><Trash2 size={14} /> Excluir</button></>}{activeList && !isShared && <button className="secondary-button small attention-button" onClick={shareActiveList} disabled={sharing || !activeItems.length}><Share2 size={14} /> {sharing ? "Gerando..." : "Compartilhar"}</button>}{isShared && <button className="secondary-button small" onClick={copyShareLink}><Link2 size={14} /> Copiar link</button>}{isShared && <button className="secondary-button small" onClick={exitShared}>Sair</button>}</div><button className="secondary-button" onClick={() => setShowTemplates((value) => !value)}><Repeat2 size={17} /> Listas recorrentes <ChevronDown size={15} className={showTemplates ? 'rotate' : ''} /></button></div></div><div className="hero-totals"><div className="totals-top"><div className="total-box"><span>Total compras cliente</span><strong>{fmt(totals.estimado)}{totals.semPreco > 0 ? '*' : ''}</strong><small>{totals.auto} auto · {totals.manual + totals.book} seus · {totals.cobertura}/{displayItems.length} com preço</small></div><div className="total-box"><span>Valor pago no caixa</span><input value={totalCaixa} onChange={(e) => setTotalCaixa(e.target.value)} placeholder="R$ da nota fiscal" inputMode="decimal" aria-label="Total da nota fiscal" />{market ? <small> Mercado: {market}</small> : null}{totals.diff != null && <small className={totals.diff > 0 ? 'diff-up' : 'diff-ok'}>Diferença {fmt(totals.diff)} ({totals.diffPct != null ? `${totals.diffPct > 0 ? '+' : ''}${totals.diffPct.toFixed(1)}%` : '—'})</small>}<button className="primary-button total-box-btn" onClick={finalizePurchase} disabled={!displayItems.length || isShared}>Finalizar e arquivar</button></div></div></div></section>
     {status && <div className="status" role="alert"><span>{status}</span><button onClick={() => setStatus('')}><X size={15} /></button></div>}
