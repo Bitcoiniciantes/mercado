@@ -4,5 +4,26 @@ service cloud.firestore {
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+    // Lista compartilhada do churrasco: nome da lista = nome do churrasco.
+    // Leitura aberta para quem tem o link; escrita exige auth (Google ou anônimo).
+    match /sharedLists/{shareId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() < 80;
+      allow update: if request.auth != null && (!resource.data.keys().hasAll(['archived']) || resource.data.archived == false);
+      allow delete: if request.auth != null
+        && resource.data.ownerUid is string
+        && resource.data.ownerUid == request.auth.uid;
+      match /items/{itemId} {
+        allow read: if true;
+        allow create, update: if request.auth != null
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+          && request.resource.data.name.size() < 80;
+        allow delete: if request.auth != null;
+      }
+    }
   }
 }

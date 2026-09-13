@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
-import { Check, ChevronDown, CircleHelp, Copy, LogIn, LogOut, Plus, Repeat2, ShoppingCart, Trash2, X } from 'lucide-react';
-import { auth, db, firebaseConfigured, googleProvider } from './firebase';
+import { Check, ChevronDown, CircleHelp, Copy, Link2, LogIn, LogOut, Plus, Repeat2, Share2, ShoppingCart, Trash2, X } from 'lucide-react';
+import { auth, db, ensureAnon, firebaseConfigured, googleProvider } from './firebase';
 import { QUICK_CATALOG } from './quickCatalog';
 import { finalPriceFor, normName, priceSourceLabel, priceUpdatedAt } from './lib/prices';
+import { buildShareLink, parseShareHash, setShareHash, shortId } from './lib/share';
 
 const CATEGORIES = [
   { id: 'hortifruti', label: 'Hortifruti', emoji: '🥬' },
@@ -27,7 +28,7 @@ function categoryLabel(id) {
 }
 function uid() {
   try {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return uid();
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
   } catch {}
   return `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -109,6 +110,13 @@ export default function App() {
   const [showNewList, setShowNewList] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newListMarket, setNewListMarket] = useState('');
+  // Compartilhado (churrasco): link #/l/ABC123 com edição anônima.
+  const [sharedId, setSharedId] = useState(() => { try { return parseShareHash(); } catch { return null; } });
+  const [sharedList, setSharedList] = useState(null);
+  const [sharedItems, setSharedItems] = useState([]);
+  const [showShare, setShowShare] = useState(false);
+  const [shareLink, setShareLink] = useState('');
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     const base = import.meta.env.BASE_URL || '/';
@@ -122,6 +130,26 @@ export default function App() {
   }, []);
 
   useEffect(() => auth ? onAuthStateChanged(auth, setUser) : undefined, []);
+
+  useEffect(() => {
+    function onHash() { try { setSharedId(parseShareHash()); } catch {} }
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  // Modo compartilhado: entra anônimo e assina a lista do churrasco em tempo real.
+  useEffect(() => {
+    if (!sharedId || !db) { setSharedList(null); setSharedItems([]); return undefined; }
+    let unsubDoc; let unsubItems;
+    ensureAnon().catch(() => {});
+    unsubDoc = onSnapshot(doc(db, 'sharedLists', sharedId), (snap) => {
+      setSharedList(snap.exists() ? { id: snap.id, ...snap.data() } : null);
+    });
+    unsubItems = onSnapshot(query(collection(db, 'sharedLists', sharedId, 'items'), orderBy('createdAt', 'desc')), (snap) => {
+      setSharedItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    }, () => {});
+    return () => { try { unsubDoc && unsubDoc(); } catch {} try { unsubItems && unsubItems(); } catch {} };
+  }, [sharedId]);
   useEffect(() => {
     const WORKER_URL = 'https://floral-truth-af64.bitcoiniciantes.workers.dev';
     const SITE_NAME = 'mercado';
@@ -183,12 +211,15 @@ export default function App() {
   useEffect(() => { if (activeListId) setNoListWarn(false); }, [activeListId]);
   const activeList = lists.find((list) => list.id === activeListId) || null;
   const activeItems = items.filter((item) => (item.listId || 'default') === activeListId);
-  const pending = activeItems.filter((item) => !item.isChecked).length;
-  const grouped = useMemo(() => CATEGORIES.map((categoryItem) => ({ ...categoryItem, items: activeItems.filter((item) => item.category === categoryItem.id).sort((a, b) => Number(a.isChecked) - Number(b.isChecked)) })).filter((group) => group.items.length), [activeItems]);
+  const isShared = !!sharedId;
+  const displayList = isShared ? sharedList : activeList;
+  const displayItems = isShared ? sharedItems : activeItems;
+  const pending = displayItems.filter((item) => !item.isChecked).length;
+  const grouped = useMemo(() => CATEGORIES.map((categoryItem) => ({ ...categoryItem, items: displayItems.filter((item) => item.category === categoryItem.id).sort((a, b) => Number(a.isChecked) - Number(b.isChecked)) })).filter((group) => group.items.length), [displayItems]);
 
   const totals = useMemo(() => {
     let estimado = 0; let auto = 0; let manual = 0; let book = 0; let semPreco = 0;
-    activeItems.forEach((item) => {
+    displayItems.forEach((item) => {
       const fp = finalPriceFor(item, priceTable, priceBook);
       if (fp.value == null) semPreco += 1;
       else { estimado += fp.value; if (fp.origin === 'manual') manual += 1; else if (fp.origin === 'book') book += 1; else auto += 1; }
@@ -197,8 +228,8 @@ export default function App() {
     const caixaNum = Number.isFinite(caixa) && String(totalCaixa).trim() !== '' ? caixa : null;
     const diff = caixaNum != null ? caixaNum - estimado : null;
     const diffPct = caixaNum != null && estimado > 0 ? (diff / estimado) * 100 : null;
-    return { estimado, auto, manual, book, semPreco, cobertura: activeItems.length ? activeItems.length - semPreco : 0, caixaNum, diff, diffPct };
-  }, [activeItems, priceTable, totalCaixa]);
+    return { estimado, auto, manual, book, semPreco, cobertura: displayItems.length ? displayItems.length - semPreco : 0, caixaNum, diff, diffPct };
+  }, [displayItems, priceTable, totalCaixa]);
 
   const fmt = (v) => v == null ? '—' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -359,6 +390,15 @@ export default function App() {
     setStatus(`Lista “${activeList.name}” excluída.`);
   }
   async function addSuggestion(itemName, itemCategory) {
+    if (isShared) {
+      if (!sharedId || !db) { setStatus('Lista compartilhada indisponível offline.'); return; }
+      if (sharedList?.archived) { setStatus('Lista arquivada pelo dono.'); return; }
+      if (displayItems.some((item) => normalizeItemName(item.name) === normalizeItemName(itemName))) return;
+      await ensureAnon();
+      await addDoc(collection(db, 'sharedLists', sharedId, 'items'), { name: itemName, category: itemCategory, listId: sharedId, isChecked: false, createdAt: serverTimestamp() });
+      setStatus(`${itemName} adicionado à lista.`);
+      return;
+    }
     if (!activeListId) { setStatus('Crie ou selecione uma lista antes de adicionar itens.'); return; }
     const alreadyAdded = activeItems.some((item) => normalizeItemName(item.name) === normalizeItemName(itemName));
     if (alreadyAdded) return;
@@ -370,6 +410,17 @@ export default function App() {
 
   async function addItem(event) {
     event.preventDefault();
+    if (isShared) {
+      if (!sharedId || !db) { setStatus('Lista compartilhada indisponível offline.'); return; }
+      if (sharedList?.archived) { setStatus('Lista arquivada pelo dono.'); return; }
+      const cleanName = name.trim();
+      if (!cleanName) return;
+      if (displayItems.some((item) => normalizeItemName(item.name) === normalizeItemName(cleanName))) { setDuplicateNotice(`${cleanName} já está na lista.`); return; }
+      await ensureAnon();
+      await addDoc(collection(db, 'sharedLists', sharedId, 'items'), { name: cleanName, category, listId: sharedId, isChecked: false, createdAt: serverTimestamp() });
+      setName('');
+      return;
+    }
     if (!activeListId) { setNoListWarn(true); setStatus('Crie ou selecione uma lista antes de adicionar itens.'); return; }
     const cleanName = name.trim();
     if (!cleanName) return;
@@ -381,13 +432,77 @@ export default function App() {
   }
 
   async function toggleItem(item) {
+    if (isShared) {
+      if (!db) return;
+      await ensureAnon();
+      await updateDoc(doc(db, 'sharedLists', sharedId, 'items', item.id), { isChecked: !item.isChecked });
+      return;
+    }
     if (user && db) await updateDoc(doc(db, 'users', user.uid, 'items', item.id), { isChecked: !item.isChecked });
     else persistLocalItems(items.map((entry) => entry.id === item.id ? { ...entry, isChecked: !entry.isChecked } : entry));
   }
 
   async function removeItem(item) {
+    if (isShared) {
+      if (!db) return;
+      await ensureAnon();
+      await deleteDoc(doc(db, 'sharedLists', sharedId, 'items', item.id));
+      return;
+    }
     if (user && db) await deleteDoc(doc(db, 'users', user.uid, 'items', item.id));
     else persistLocalItems(items.filter((entry) => entry.id !== item.id));
+  }
+
+  // Compartilhar lista privada atual: nome da lista = nome do churrasco.
+  async function shareActiveList() {
+    if (!activeList || !activeItems.length) { setStatus('Adicione itens antes de compartilhar.'); return; }
+    if (!db) { setStatus('Configure o Firebase (.env) para gerar link compartilhável.'); return; }
+    setSharing(true);
+    try {
+      await ensureAnon();
+      const id = shortId();
+      const ownerUid = auth?.currentUser?.uid || user?.uid || null;
+      await setDoc(doc(db, 'sharedLists', id), {
+        name: activeList.name, // nome do churrasco
+        market: market || null,
+        ownerUid,
+        allowEdit: true,
+        archived: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      for (let i = 0; i < activeItems.length; i += 400) {
+        const batch = writeBatch(db);
+        activeItems.slice(i, i + 400).forEach((it) => {
+          batch.set(doc(collection(db, 'sharedLists', id, 'items')), {
+            name: it.name, category: it.category || 'outros', listId: id,
+            isChecked: false, priceManual: it.priceManual ?? null, createdAt: serverTimestamp(),
+          });
+        });
+        await batch.commit();
+      }
+      const link = buildShareLink(id);
+      setShareLink(link);
+      setShareHash(id);
+      setSharedId(id);
+      setShowShare(true);
+      setStatus(`Link do “${activeList.name}” criado. Envie no WhatsApp.`);
+    } catch (e) {
+      setStatus(`Não foi possível compartilhar: ${e?.message || e}`);
+    } finally { setSharing(false); }
+  }
+
+  function exitShared() {
+    setShareHash('');
+    setSharedId(null);
+    setSharedList(null);
+    setSharedItems([]);
+    setShowShare(false);
+  }
+
+  async function copyShareLink() {
+    try { await navigator.clipboard.writeText(shareLink || buildShareLink(sharedId)); setStatus('Link copiado. Cole no WhatsApp.'); }
+    catch { setStatus('Copie o link manualmente.'); }
   }
 
   async function saveTemplate() {
@@ -435,7 +550,8 @@ export default function App() {
     const raw = String(editingPriceValue).replace(',', '.').trim();
     const bookKey = normName(item.name);
     if (raw === '') {
-      if (user && db) await updateDoc(doc(db, 'users', user.uid, 'items', item.id), { priceManual: null });
+      if (isShared && db) { await ensureAnon(); await updateDoc(doc(db, 'sharedLists', sharedId, 'items', item.id), { priceManual: null }); }
+      else if (user && db) await updateDoc(doc(db, 'users', user.uid, 'items', item.id), { priceManual: null });
       else persistLocalItems(items.map((e) => e.id === item.id ? { ...e, priceManual: null } : e));
       // Limpar volta ao automatico: esquece tambem a memoria desse produto.
       if (bookKey && priceBook[bookKey]) {
@@ -448,9 +564,10 @@ export default function App() {
       const v = Number(raw);
       if (!Number.isFinite(v) || v < 0) { setStatus('Valor inválido. Use ex.: 12,90'); return; }
       const rounded = Math.round(v * 100) / 100;
-      if (user && db) await updateDoc(doc(db, 'users', user.uid, 'items', item.id), { priceManual: rounded });
+      if (isShared && db) { await ensureAnon(); await updateDoc(doc(db, 'sharedLists', sharedId, 'items', item.id), { priceManual: rounded }); }
+      else if (user && db) await updateDoc(doc(db, 'users', user.uid, 'items', item.id), { priceManual: rounded });
       else persistLocalItems(items.map((e) => e.id === item.id ? { ...e, priceManual: rounded } : e));
-      // Aprende: passa a valer nas proximas compras.
+      // Aprende: passa a valer nas proximas compras (memória só local, não vaza).
       if (bookKey) persistBook({ ...priceBook, [bookKey]: { value: rounded, display: item.name, at: Date.now() } });
     }
     setEditingPriceId(null); setEditingPriceValue('');
@@ -559,12 +676,15 @@ export default function App() {
   return <main className="app-shell">
     <header className="topbar"><div className="brand"><div className="brand-mark"><ShoppingCart size={21} /></div><div><strong>Lista de Compras</strong><span>Organize. Compre. Simplifique.</span></div></div><div className="account">{user ? <><span className="avatar">{(user.displayName || 'C').charAt(0).toUpperCase()}</span><span className="user-name">Olá, {(user.displayName || 'Conta').split(' ')[0]}</span><button className="icon-button" onClick={logout} title="Sair"><LogOut size={17} /></button></> : <button className="login-button" onClick={login} disabled={loadingAuth}><LogIn size={16} /> Entrar com Google</button>}</div></header>
     {!firebaseConfigured && <div className="setup-notice"><CircleHelp size={17} /> Modo local ativo. Configure o arquivo `.env` para sincronizar listas por usuário.</div>}
-    <section className="hero"><div><p className="eyebrow">COMPRA ATIVA</p><h1>{activeList?.name || 'Nenhuma lista ativa'}</h1><p className="muted">{pending} {pending === 1 ? 'item pendente' : 'itens pendentes'} · preços Procon-SP de {String(priceUpdatedAt(priceTable)).split('-').reverse().join('/')}. </p><div className="hero-actions"><div className="list-controls"><select value={activeListId || ''} onChange={(event) => selectList(event.target.value)} aria-label="Selecionar lista"><option value="">Nenhuma lista ativa</option>{lists.map((list) => <option value={list.id} key={list.id}>{list.hidden ? 'Oculta · ' : ''}{list.name}</option>)}</select><button className="secondary-button small attention-button" onClick={createList}><Plus size={15} /> Nova lista</button>{activeList && <><button className="secondary-button small" onClick={hideActiveList}>Ocultar</button><button className="secondary-button small danger-button" onClick={deleteActiveList}><Trash2 size={14} /> Excluir</button></>}</div><button className="secondary-button" onClick={() => setShowTemplates((value) => !value)}><Repeat2 size={17} /> Listas recorrentes <ChevronDown size={15} className={showTemplates ? 'rotate' : ''} /></button></div></div><div className="hero-totals"><div className="totals-top"><div className="total-box"><span>Total compras cliente</span><strong>{fmt(totals.estimado)}{totals.semPreco > 0 ? '*' : ''}</strong><small>{totals.auto} auto · {totals.manual + totals.book} seus · {totals.cobertura}/{activeItems.length} com preço</small></div><div className="total-box"><span>Valor pago no caixa</span><input value={totalCaixa} onChange={(e) => setTotalCaixa(e.target.value)} placeholder="R$ da nota fiscal" inputMode="decimal" aria-label="Total da nota fiscal" />{market ? <small> Mercado: {market}</small> : null}{totals.diff != null && <small className={totals.diff > 0 ? 'diff-up' : 'diff-ok'}>Diferença {fmt(totals.diff)} ({totals.diffPct != null ? `${totals.diffPct > 0 ? '+' : ''}${totals.diffPct.toFixed(1)}%` : '—'})</small>}<button className="primary-button total-box-btn" onClick={finalizePurchase} disabled={!activeItems.length}>Finalizar e arquivar</button></div></div></div></section>
+    <section className="hero"><div><p className="eyebrow">{isShared ? "CHURRASCO · LISTA COMPARTILHADA" : "COMPRA ATIVA"}</p><h1>{displayList?.name || 'Nenhuma lista ativa'}</h1><p className="muted">{pending} {pending === 1 ? 'item pendente' : 'itens pendentes'} · preços Procon-SP de {String(priceUpdatedAt(priceTable)).split('-').reverse().join('/')}. </p><div className="hero-actions"><div className="list-controls"><select value={activeListId || ''} onChange={(event) => selectList(event.target.value)} aria-label="Selecionar lista"><option value="">Nenhuma lista ativa</option>{lists.map((list) => <option value={list.id} key={list.id}>{list.hidden ? 'Oculta · ' : ''}{list.name}</option>)}</select><button className="secondary-button small attention-button" onClick={createList}><Plus size={15} /> Nova lista</button>{activeList && !isShared && <><button className="secondary-button small" onClick={hideActiveList}>Ocultar</button><button className="secondary-button small danger-button" onClick={deleteActiveList}><Trash2 size={14} /> Excluir</button></>}{activeList && !isShared && <button className="secondary-button small attention-button" onClick={shareActiveList} disabled={sharing || !activeItems.length}><Share2 size={14} /> {sharing ? "Gerando..." : "Compartilhar"}</button>}{isShared && <button className="secondary-button small" onClick={copyShareLink}><Link2 size={14} /> Copiar link</button>}{isShared && <button className="secondary-button small" onClick={exitShared}>Sair</button>}</div><button className="secondary-button" onClick={() => setShowTemplates((value) => !value)}><Repeat2 size={17} /> Listas recorrentes <ChevronDown size={15} className={showTemplates ? 'rotate' : ''} /></button></div></div><div className="hero-totals"><div className="totals-top"><div className="total-box"><span>Total compras cliente</span><strong>{fmt(totals.estimado)}{totals.semPreco > 0 ? '*' : ''}</strong><small>{totals.auto} auto · {totals.manual + totals.book} seus · {totals.cobertura}/{displayItems.length} com preço</small></div><div className="total-box"><span>Valor pago no caixa</span><input value={totalCaixa} onChange={(e) => setTotalCaixa(e.target.value)} placeholder="R$ da nota fiscal" inputMode="decimal" aria-label="Total da nota fiscal" />{market ? <small> Mercado: {market}</small> : null}{totals.diff != null && <small className={totals.diff > 0 ? 'diff-up' : 'diff-ok'}>Diferença {fmt(totals.diff)} ({totals.diffPct != null ? `${totals.diffPct > 0 ? '+' : ''}${totals.diffPct.toFixed(1)}%` : '—'})</small>}<button className="primary-button total-box-btn" onClick={finalizePurchase} disabled={!displayItems.length || isShared}>Finalizar e arquivar</button></div></div></div></section>
     {status && <div className="status" role="alert"><span>{status}</span><button onClick={() => setStatus('')}><X size={15} /></button></div>}
+    {isShared && sharedList?.market && <div className="setup-notice"><Share2 size={15} /> Churrasco compartilhado - edicao anonima ativa. Compartilhe o link com a turma.</div>}
+    {isShared && !sharedList && sharedId && <div className="setup-notice">Procurando lista... confira o link.</div>}
+    {showShare && <div className="modal-overlay" onClick={() => setShowShare(false)}><div className="modal-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Compartilhar churrasco"><div className="panel-heading"><div><p className="eyebrow">CHURRASCO COMPARTILHADO</p><h2>{displayList?.name || activeList?.name}</h2></div><button className="icon-button" onClick={() => setShowShare(false)}><X size={17} /></button></div><p className="muted">Quem abrir o link edita junto, sem login. Nome da lista = nome do churrasco.</p><label>Link<input value={shareLink || (sharedId ? buildShareLink(sharedId) : "")} readOnly onFocus={(e) => e.target.select()} aria-label="Link compartilhável" /></label><div className="modal-actions"><button className="secondary-button" onClick={copyShareLink}><Copy size={15} /> Copiar</button><button className="secondary-button" onClick={() => setShowShare(false)}>Fechar</button></div></div></div>}
     {showNewList && <div className="modal-overlay" onClick={() => setShowNewList(false)}><div className="modal-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Nova lista"><div className="panel-heading"><div><p className="eyebrow">NOVA LISTA</p><h2>Criar lista</h2></div><button className="icon-button" onClick={() => setShowNewList(false)}><X size={17} /></button></div><label>Nome da lista<input value={newListName} onChange={(e) => setNewListName(e.target.value)} placeholder="Ex.: Compra do mês" aria-label="Nome da lista" /></label><label>Nome do mercado (opcional)<input value={newListMarket} onChange={(e) => setNewListMarket(e.target.value)} placeholder="Ex.: Gama" aria-label="Nome do mercado" /></label><div className="modal-actions"><button className="secondary-button" onClick={() => setShowNewList(false)}>Cancelar</button><button className="primary-button" onClick={confirmNewList}><Plus size={16} /> Criar lista</button></div></div></div>}
     {showTemplates && <section className="templates-panel"><div className="panel-heading"><div><p className="eyebrow">LISTA RECORRENTE</p><h2>Listas recorrentes</h2></div><button className="icon-button" onClick={() => setShowTemplates(false)}><X size={17} /></button></div><div className="template-save"><input value={templateName} onChange={(event) => setTemplateName(event.target.value)} placeholder="Nome da lista recorrente (ex.: Compra mensal)" /><button className="primary-button" onClick={saveTemplate}><Copy size={16} /> Salvar lista atual</button></div>{templates.length ? <div className="template-list">{templates.map((template) => <div className="template-card" key={template.id}><div><strong>{template.name}</strong><span>{template.items.length} {template.items.length === 1 ? 'item' : 'itens'}</span></div><button className="secondary-button small" onClick={() => importTemplate(template)}>Importar</button></div>)}</div> : <p className="empty-template">Nenhuma lista recorrente salva.</p>}</section>}
-    <section className="suggestions-panel"><div className="suggestions-heading"><div><p className="eyebrow">PARA FACILITAR</p><button type="button" className="quick-main-toggle" onClick={() => setShowQuick((v) => !v)} aria-expanded={showQuick}><span><Plus size={17} /> Adicione produtos</span><ChevronDown size={17} className={showQuick ? 'rotate' : ''} /></button></div></div>{showQuick && <>{!activeListId ? <p className="quick-warning" role="alert">Crie ou selecione uma lista para adicionar produtos.</p> : <><p className="muted quick-hint">Abra uma categoria e escolha os produtos. Cada item adicionado desaparece do catálogo.</p><div className="quick-menu" ref={quickMenuRef}>{QUICK_CATALOG.map((group)=>{const subtypes=group.subtypes.map((subtype)=>({...subtype,availableItems:subtype.items.filter(([itemName])=>!activeItems.some((item)=>normalizeItemName(item.name)===normalizeItemName(itemName)))})).filter((subtype)=>subtype.availableItems.length);if(!subtypes.length)return null;const groupCount=subtypes.reduce((total,subtype)=>total+subtype.availableItems.length,0),groupOpen=openQuickGroups.has(group.id);return <div className="quick-group" key={group.id}><button type="button" className="quick-group-toggle" onClick={()=>toggleQuickGroup(group.id)} aria-expanded={groupOpen}><span>{group.emoji} {group.label}</span><span className="quick-count">{groupCount}<ChevronDown size={15} className={groupOpen?'rotate':''}/></span></button>{groupOpen&&<div className="quick-subtypes">{group.flat ? <div className="suggestion-list">{subtypes.flatMap((subtype) => subtype.availableItems).map(([itemName,itemCategory])=><button type="button" className="suggestion-chip" key={itemName} onClick={()=>addSuggestion(itemName,itemCategory)}><Plus size={13}/>{itemName}</button>)}</div> : subtypes.map((subtype)=><details className="quick-subtype" key={subtype.id}><summary>{subtype.label}<span>{subtype.availableItems.length}</span></summary><div className="suggestion-list">{subtype.availableItems.map(([itemName,itemCategory])=><button type="button" className="suggestion-chip" key={itemName} onClick={()=>addSuggestion(itemName,itemCategory)}><Plus size={13}/>{itemName}</button>)}</div></details>)}</div>}</div>})}</div></>}</>}</section>    <section className="card"><form className="add-form" onSubmit={addItem}><input value={name} onChange={(event) => { setName(event.target.value); setDuplicateNotice(''); }} placeholder="Não adicionou o produto? Inclua o item..." aria-label="Nome do item" /><select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Categoria">{CATEGORIES.map((item) => <option value={item.id} key={item.id}>{item.emoji} {item.label}</option>)}</select><button className="primary-button" type="submit"><Plus size={18} /> Adicionar item</button></form>{!activeListId && noListWarn && <p className="no-list-notice" role="alert">Crie ou selecione uma lista para adicionar produtos.</p>}{duplicateNotice && <p className="duplicate-notice" role="alert">{duplicateNotice}</p>}{grouped.length ? <div className="groups">{grouped.map((group) => <section key={group.id} className={group.items.every((item) => item.isChecked) ? 'category-section category-complete' : 'category-section'}><h2><span>{group.emoji}</span>{group.label}<small className={group.items.some((item) => !item.isChecked) ? "" : "badge-done"}>{group.items.filter((item) => !item.isChecked).length} de {group.items.length}</small>{group.items.every((item) => item.isChecked) && <em>Concluída</em>}</h2><ul>{group.items.map((item) => <li key={item.id} className={item.isChecked ? 'checked' : ''}><button className="check" onClick={() => toggleItem(item)} aria-label={`Marcar ${item.name}`}><Check size={14} /></button><span className="item-name">{item.name}</span>{(() => { const fp = finalPriceFor(item, priceTable, priceBook); if (editingPriceId === item.id) return <span className="price-edit"><input value={editingPriceValue} onChange={(e) => setEditingPriceValue(e.target.value)} placeholder="12,90" inputMode="decimal" aria-label={`Preço de ${item.name}`} /><button className="secondary-button small" onClick={() => saveManualPrice(item)}>OK</button><button className="secondary-button small" onClick={() => setEditingPriceId(null)}>X</button></span>; if (fp.value == null) return <button className="price-chip price-none" onClick={() => startEditPrice(item)} title="Sem referência — clique para informar">—</button>; const srcLabel = priceSourceLabel(fp); const chipClass = fp.origin === 'manual' ? 'price-chip price-manual' : fp.origin === 'book' ? 'price-chip price-book' : 'price-chip price-auto'; const chipTitle = fp.origin === 'manual' ? 'Preço manual — clique para corrigir' : fp.origin === 'book' ? srcLabel : `Pré-valor — clique para corrigir${srcLabel ? `. ${srcLabel}` : ''}`; return <button className={chipClass} onClick={() => startEditPrice(item)} title={chipTitle}>{fmt(fp.value)}{fp.origin === 'auto' ? '*' : ''}</button>; })()}<button className="delete" onClick={() => removeItem(item)} aria-label={`Excluir ${item.name}`}><Trash2 size={16} /></button></li>)}</ul></section>)}</div> : <div className="empty"><ShoppingCart size={34} /><h2>Sua lista está vazia</h2><p>{!activeListId ? 'Crie ou selecione sua lista.' : 'Adicione seu primeiro item para começar.'}</p></div>}</section>
-    <section className="totals-bottom"><div><span>Total compras cliente</span><strong>{fmt(totals.estimado)}{totals.semPreco > 0 ? '*' : ''}</strong><small>{totals.cobertura}/{activeItems.length} com preço</small></div><div><span>Valor pago no caixa</span><input className="caixa-input" value={totalCaixa} onChange={(e) => setTotalCaixa(e.target.value)} placeholder="R$ nota fiscal" inputMode="decimal" aria-label="Total da nota fiscal" />{totals.diff != null && <small>Dif. {fmt(totals.diff)}</small>}</div><div className="totals-actions"><button className="primary-button" onClick={finalizePurchase} disabled={!activeItems.length}>Finalizar e arquivar</button><button className="secondary-button small" onClick={() => setShowDash((v) => !v)}>{showDash ? 'Ocultar' : 'Comparar'}</button></div></section>
+    <section className="suggestions-panel"><div className="suggestions-heading"><div><p className="eyebrow">PARA FACILITAR</p><button type="button" className="quick-main-toggle" onClick={() => setShowQuick((v) => !v)} aria-expanded={showQuick}><span><Plus size={17} /> Adicione produtos</span><ChevronDown size={17} className={showQuick ? 'rotate' : ''} /></button></div></div>{showQuick && <>{!displayList ? <p className="quick-warning" role="alert">Crie ou selecione uma lista para adicionar produtos.</p> : <><p className="muted quick-hint">Abra uma categoria e escolha os produtos. Cada item adicionado desaparece do catálogo.</p><div className="quick-menu" ref={quickMenuRef}>{QUICK_CATALOG.map((group)=>{const subtypes=group.subtypes.map((subtype)=>({...subtype,availableItems:subtype.items.filter(([itemName])=>!displayItems.some((item)=>normalizeItemName(item.name)===normalizeItemName(itemName)))})).filter((subtype)=>subtype.availableItems.length);if(!subtypes.length)return null;const groupCount=subtypes.reduce((total,subtype)=>total+subtype.availableItems.length,0),groupOpen=openQuickGroups.has(group.id);return <div className="quick-group" key={group.id}><button type="button" className="quick-group-toggle" onClick={()=>toggleQuickGroup(group.id)} aria-expanded={groupOpen}><span>{group.emoji} {group.label}</span><span className="quick-count">{groupCount}<ChevronDown size={15} className={groupOpen?'rotate':''}/></span></button>{groupOpen&&<div className="quick-subtypes">{group.flat ? <div className="suggestion-list">{subtypes.flatMap((subtype) => subtype.availableItems).map(([itemName,itemCategory])=><button type="button" className="suggestion-chip" key={itemName} onClick={()=>addSuggestion(itemName,itemCategory)}><Plus size={13}/>{itemName}</button>)}</div> : subtypes.map((subtype)=><details className="quick-subtype" key={subtype.id}><summary>{subtype.label}<span>{subtype.availableItems.length}</span></summary><div className="suggestion-list">{subtype.availableItems.map(([itemName,itemCategory])=><button type="button" className="suggestion-chip" key={itemName} onClick={()=>addSuggestion(itemName,itemCategory)}><Plus size={13}/>{itemName}</button>)}</div></details>)}</div>}</div>})}</div></>}</>}</section>    <section className="card"><form className="add-form" onSubmit={addItem}><input value={name} onChange={(event) => { setName(event.target.value); setDuplicateNotice(''); }} placeholder="Não adicionou o produto? Inclua o item..." aria-label="Nome do item" /><select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Categoria">{CATEGORIES.map((item) => <option value={item.id} key={item.id}>{item.emoji} {item.label}</option>)}</select><button className="primary-button" type="submit"><Plus size={18} /> Adicionar item</button></form>{!activeListId && noListWarn && <p className="no-list-notice" role="alert">Crie ou selecione uma lista para adicionar produtos.</p>}{duplicateNotice && <p className="duplicate-notice" role="alert">{duplicateNotice}</p>}{grouped.length ? <div className="groups">{grouped.map((group) => <section key={group.id} className={group.items.every((item) => item.isChecked) ? 'category-section category-complete' : 'category-section'}><h2><span>{group.emoji}</span>{group.label}<small className={group.items.some((item) => !item.isChecked) ? "" : "badge-done"}>{group.items.filter((item) => !item.isChecked).length} de {group.items.length}</small>{group.items.every((item) => item.isChecked) && <em>Concluída</em>}</h2><ul>{group.items.map((item) => <li key={item.id} className={item.isChecked ? 'checked' : ''}><button className="check" onClick={() => toggleItem(item)} aria-label={`Marcar ${item.name}`}><Check size={14} /></button><span className="item-name">{item.name}</span>{(() => { const fp = finalPriceFor(item, priceTable, priceBook); if (editingPriceId === item.id) return <span className="price-edit"><input value={editingPriceValue} onChange={(e) => setEditingPriceValue(e.target.value)} placeholder="12,90" inputMode="decimal" aria-label={`Preço de ${item.name}`} /><button className="secondary-button small" onClick={() => saveManualPrice(item)}>OK</button><button className="secondary-button small" onClick={() => setEditingPriceId(null)}>X</button></span>; if (fp.value == null) return <button className="price-chip price-none" onClick={() => startEditPrice(item)} title="Sem referência — clique para informar">—</button>; const srcLabel = priceSourceLabel(fp); const chipClass = fp.origin === 'manual' ? 'price-chip price-manual' : fp.origin === 'book' ? 'price-chip price-book' : 'price-chip price-auto'; const chipTitle = fp.origin === 'manual' ? 'Preço manual — clique para corrigir' : fp.origin === 'book' ? srcLabel : `Pré-valor — clique para corrigir${srcLabel ? `. ${srcLabel}` : ''}`; return <button className={chipClass} onClick={() => startEditPrice(item)} title={chipTitle}>{fmt(fp.value)}{fp.origin === 'auto' ? '*' : ''}</button>; })()}<button className="delete" onClick={() => removeItem(item)} aria-label={`Excluir ${item.name}`}><Trash2 size={16} /></button></li>)}</ul></section>)}</div> : <div className="empty"><ShoppingCart size={34} /><h2>Sua lista está vazia</h2><p>{!activeListId ? 'Crie ou selecione sua lista.' : 'Adicione seu primeiro item para começar.'}</p></div>}</section>
+    <section className="totals-bottom"><div><span>Total compras cliente</span><strong>{fmt(totals.estimado)}{totals.semPreco > 0 ? '*' : ''}</strong><small>{totals.cobertura}/{displayItems.length} com preço</small></div><div><span>Valor pago no caixa</span><input className="caixa-input" value={totalCaixa} onChange={(e) => setTotalCaixa(e.target.value)} placeholder="R$ nota fiscal" inputMode="decimal" aria-label="Total da nota fiscal" />{totals.diff != null && <small>Dif. {fmt(totals.diff)}</small>}</div><div className="totals-actions"><button className="primary-button" onClick={finalizePurchase} disabled={!displayItems.length || isShared}>Finalizar e arquivar</button><button className="secondary-button small" onClick={() => setShowDash((v) => !v)}>{showDash ? 'Ocultar' : 'Comparar'}</button></div></section>
     {showDash && <section className="card dash"><div className="panel-heading"><div><p className="eyebrow">COMPARATIVO</p><h2>Estimado x caixa</h2><p className="muted">* = pré-valor da tabela quinzenal. Sem * = preço que você corrigiu.</p></div><button className="icon-button" onClick={() => setShowDash(false)}><X size={17} /></button></div>
     <div className="dash-cards"><div className="dash-card"><span>No mês · estimado</span><strong>{fmt(dashStats.estMonth)}</strong><small>{dashStats.inMonth.length} {dashStats.inMonth.length === 1 ? 'compra' : 'compras'}</small></div><div className="dash-card"><span>No mês · caixa</span><strong>{dashStats.caixaMonth ? fmt(dashStats.caixaMonth) : '—'}</strong><small>{dashStats.diffMonth != null ? `dif. ${fmt(dashStats.diffMonth)}` : 'sem cupom lançado'}</small></div><div className="dash-card"><span>Ticket médio (caixa)</span><strong>{(() => { const withCaixa = dashStats.inMonth.filter((p) => p.totalCaixa != null); return withCaixa.length ? fmt(dashStats.caixaMonth / withCaixa.length) : '—'; })()}</strong><small>por ida ao mercado</small></div></div>
     {dashStats.top.length > 0 && <div className="dash-top"><h3>Mais frequentes</h3>{dashStats.top.map((t) => <div className="bar" key={t.name}><span className="bar-label">{t.name} · {t.count}x</span><div className="bar-track"><i style={{ width: `${(t.count / dashStats.maxTop) * 100}%` }} className="bar-est" /></div><span>{fmt(t.total)}</span></div>)}</div>}
