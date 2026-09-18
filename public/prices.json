@@ -7,7 +7,7 @@
         "qty": 5,
         "unit": "kg"
       },
-      "priceBase": 3.926,
+      "priceBase": 4.118,
       "faixa": {
         "min": null,
         "max": null
@@ -15,7 +15,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "feijao-carioca-1kg": {
       "display": "Feijão carioca 1kg",
@@ -24,7 +24,7 @@
         "qty": 1,
         "unit": "kg"
       },
-      "priceBase": 8.96,
+      "priceBase": 8.63,
       "faixa": {
         "min": null,
         "max": null
@@ -32,7 +32,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "acucar-1kg": {
       "display": "Açúcar cristal 1kg",
@@ -41,7 +41,7 @@
         "qty": 1,
         "unit": "kg"
       },
-      "priceBase": 3.606,
+      "priceBase": 3.446,
       "faixa": {
         "min": null,
         "max": null
@@ -49,7 +49,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "cafe-500g": {
       "display": "Café torrado e moído 500g",
@@ -58,7 +58,7 @@
         "qty": 500,
         "unit": "g"
       },
-      "priceBase": 49.9,
+      "priceBase": 49.72,
       "faixa": {
         "min": null,
         "max": null
@@ -66,7 +66,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "farinha-1kg": {
       "display": "Farinha de trigo 1kg",
@@ -75,7 +75,7 @@
         "qty": 1,
         "unit": "kg"
       },
-      "priceBase": 4.24,
+      "priceBase": 4.17,
       "faixa": {
         "min": null,
         "max": null
@@ -83,7 +83,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "farinha-mandioca-500g": {
       "display": "Farinha de mandioca 500g",
@@ -100,7 +100,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "batata-kg": {
       "display": "Batata 1kg",
@@ -109,7 +109,7 @@
         "qty": 1,
         "unit": "kg"
       },
-      "priceBase": 8.2,
+      "priceBase": 6.41,
       "faixa": {
         "min": null,
         "max": null
@@ -117,7 +117,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "cebola-kg": {
       "display": "Cebola 1kg",
@@ -126,7 +126,7 @@
         "qty": 1,
         "unit": "kg"
       },
-      "priceBase": 7.89,
+      "priceBase": 7.18,
       "faixa": {
         "min": null,
         "max": null
@@ -134,7 +134,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "alho-kg": {
       "display": "Alho 1kg",
@@ -143,7 +143,7 @@
         "qty": 1,
         "unit": "kg"
       },
-      "priceBase": 31.6,
+      "priceBase": 30.94,
       "faixa": {
         "min": null,
         "max": null
@@ -151,7 +151,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "ovos-dz": {
       "display": "Ovos brancos dúzia",
@@ -160,7 +160,7 @@
         "qty": 12,
         "unit": "un"
       },
-      "priceBase": 0.895,
+      "priceBase": 0.894,
       "faixa": {
         "min": null,
         "max": null
@@ -168,7 +168,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "margarina-250g": {
       "display": "Margarina 250g",
@@ -177,7 +177,7 @@
         "qty": 250,
         "unit": "g"
       },
-      "priceBase": 15.28,
+      "priceBase": 15.16,
       "faixa": {
         "min": null,
         "max": null
@@ -185,7 +185,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "extrato-tomate-350g": {
       "display": "Extrato de tomate 350g",
@@ -194,7 +194,7 @@
         "qty": 350,
         "unit": "g"
       },
-      "priceBase": 15.514,
+      "priceBase": 15.686,
       "faixa": {
         "min": null,
         "max": null
@@ -202,7 +202,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "oleo-900ml": {
       "display": "Óleo de soja 900ml",
@@ -211,7 +211,7 @@
         "qty": 900,
         "unit": "ml"
       },
-      "priceBase": 8.189,
+      "priceBase": 8.389,
       "faixa": {
         "min": null,
         "max": null
@@ -219,7 +219,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "leite-po-400g": {
       "display": "Leite em pó 400g",
@@ -228,7 +228,7 @@
         "qty": 400,
         "unit": "g"
       },
-      "priceBase": 43.8,
+      "priceBase": 44.175,
       "faixa": {
         "min": null,
         "max": null
@@ -236,7 +236,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "leite-1l": {
       "display": "Leite UHT 1L",
@@ -245,7 +245,7 @@
         "qty": 1,
         "unit": "L"
       },
-      "priceBase": 5.68,
+      "priceBase": 5.72,
       "faixa": {
         "min": null,
         "max": null
@@ -253,7 +253,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "pao-forma-500g": {
       "display": "Pão de forma 500g",
@@ -262,7 +262,7 @@
         "qty": 500,
         "unit": "g"
       },
-      "priceBase": 13.6,
+      "priceBase": 13.58,
       "faixa": {
         "min": null,
         "max": null
@@ -270,7 +270,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "pao-frances-kg": {
       "display": "Pão francês 1kg",
@@ -279,7 +279,7 @@
         "qty": 1,
         "unit": "kg"
       },
-      "priceBase": 18.07,
+      "priceBase": 17.98,
       "faixa": {
         "min": null,
         "max": null
@@ -287,7 +287,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "macarrao-500g": {
       "display": "Macarrão 500g",
@@ -304,7 +304,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "biscoito-200g": {
       "display": "Biscoito 200g",
@@ -313,7 +313,7 @@
         "qty": 200,
         "unit": "g"
       },
-      "priceBase": 17.75,
+      "priceBase": 18.6,
       "faixa": {
         "min": null,
         "max": null
@@ -321,7 +321,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "carne-1kg": {
       "display": "Carne de primeira 1kg",
@@ -330,7 +330,7 @@
         "qty": 1,
         "unit": "kg"
       },
-      "priceBase": 48.54,
+      "priceBase": 50.49,
       "faixa": {
         "min": null,
         "max": null
@@ -338,7 +338,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "carne-2kg": {
       "display": "Carne de segunda 1kg",
@@ -347,7 +347,7 @@
         "qty": 1,
         "unit": "kg"
       },
-      "priceBase": 34.58,
+      "priceBase": 33.77,
       "faixa": {
         "min": null,
         "max": null
@@ -355,7 +355,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "frango-kg": {
       "display": "Frango resfriado 1kg",
@@ -364,7 +364,7 @@
         "qty": 1,
         "unit": "kg"
       },
-      "priceBase": 11.13,
+      "priceBase": 11.33,
       "faixa": {
         "min": null,
         "max": null
@@ -372,7 +372,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "salsicha-kg": {
       "display": "Salsicha 1kg",
@@ -381,7 +381,7 @@
         "qty": 1,
         "unit": "kg"
       },
-      "priceBase": 14.35,
+      "priceBase": 13.85,
       "faixa": {
         "min": null,
         "max": null
@@ -389,7 +389,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "linguica-kg": {
       "display": "Linguiça 1kg",
@@ -398,7 +398,7 @@
         "qty": 1,
         "unit": "kg"
       },
-      "priceBase": 23.2,
+      "priceBase": 23.25,
       "faixa": {
         "min": null,
         "max": null
@@ -406,7 +406,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "mussarela-kg": {
       "display": "Muçarela fatiada 1kg",
@@ -415,7 +415,7 @@
         "qty": 1,
         "unit": "kg"
       },
-      "priceBase": 54.65,
+      "priceBase": 55.74,
       "faixa": {
         "min": null,
         "max": null
@@ -423,7 +423,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "presunto-kg": {
       "display": "Presunto fatiado 1kg",
@@ -432,7 +432,7 @@
         "qty": 1,
         "unit": "kg"
       },
-      "priceBase": 33.44,
+      "priceBase": 33.27,
       "faixa": {
         "min": null,
         "max": null
@@ -440,7 +440,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "sabao-po-800g": {
       "display": "Sabão em pó 800g",
@@ -449,7 +449,7 @@
         "qty": 800,
         "unit": "g"
       },
-      "priceBase": 11.4,
+      "priceBase": 11.38,
       "faixa": {
         "min": null,
         "max": null
@@ -457,7 +457,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "sabao-barra-un": {
       "display": "Sabão em barra un.",
@@ -466,7 +466,7 @@
         "qty": 1,
         "unit": "un"
       },
-      "priceBase": 3.14,
+      "priceBase": 3.12,
       "faixa": {
         "min": null,
         "max": null
@@ -474,7 +474,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "agua-sanitaria-1l": {
       "display": "Água sanitária 1L",
@@ -483,7 +483,7 @@
         "qty": 1,
         "unit": "L"
       },
-      "priceBase": 3.61,
+      "priceBase": 3.72,
       "faixa": {
         "min": null,
         "max": null
@@ -491,7 +491,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "amaciante-2l": {
       "display": "Amaciante 2L",
@@ -500,7 +500,7 @@
         "qty": 2,
         "unit": "L"
       },
-      "priceBase": 4.46,
+      "priceBase": 4.435,
       "faixa": {
         "min": null,
         "max": null
@@ -508,7 +508,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "detergente-500ml": {
       "display": "Detergente 500ml",
@@ -517,7 +517,7 @@
         "qty": 500,
         "unit": "ml"
       },
-      "priceBase": 4.7,
+      "priceBase": 4.76,
       "faixa": {
         "min": null,
         "max": null
@@ -525,7 +525,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "limpador-500ml": {
       "display": "Limpador multiuso 500ml",
@@ -534,7 +534,7 @@
         "qty": 500,
         "unit": "ml"
       },
-      "priceBase": 8.3,
+      "priceBase": 8.22,
       "faixa": {
         "min": null,
         "max": null
@@ -542,7 +542,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "sabonete-un": {
       "display": "Sabonete 90g",
@@ -551,7 +551,7 @@
         "qty": 1,
         "unit": "un"
       },
-      "priceBase": 2.09,
+      "priceBase": 2.02,
       "faixa": {
         "min": null,
         "max": null
@@ -559,7 +559,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "papel-hig-12un": {
       "display": "Papel higiênico (ref. un.)",
@@ -568,7 +568,7 @@
         "qty": 12,
         "unit": "un"
       },
-      "priceBase": 1.633,
+      "priceBase": 1.663,
       "faixa": {
         "min": null,
         "max": null
@@ -576,7 +576,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "absorvente-10un": {
       "display": "Absorvente 10un",
@@ -585,7 +585,7 @@
         "qty": 10,
         "unit": "un"
       },
-      "priceBase": 0.59,
+      "priceBase": 0.587,
       "faixa": {
         "min": null,
         "max": null
@@ -593,7 +593,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "creme-dental-90g": {
       "display": "Creme dental 90g",
@@ -602,7 +602,7 @@
         "qty": 90,
         "unit": "g"
       },
-      "priceBase": 55.444,
+      "priceBase": 58.111,
       "faixa": {
         "min": null,
         "max": null
@@ -610,7 +610,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "desodorante-spray": {
       "display": "Desodorante spray",
@@ -619,7 +619,7 @@
         "qty": 1,
         "unit": "un"
       },
-      "priceBase": 11.67,
+      "priceBase": 11.21,
       "faixa": {
         "min": null,
         "max": null
@@ -627,7 +627,7 @@
       "obs": null,
       "stale": false,
       "src": "procon-sp",
-      "ref": "CB-julho-2026-com-comparativo-anual.pdf"
+      "ref": "CB-agosto-2026-com-comparativo-anual.pdf"
     },
     "azeite-500ml": {
       "display": "Azeite 500ml",
@@ -694,6 +694,6 @@
       "unitBase": "kg"
     }
   },
-  "updatedAt": "2026-09-04",
+  "updatedAt": "2026-09-18",
   "source": "Cesta Basica Procon-SP/DIEESE (media SP capital, aproximacao) + seeds manuais"
 }
